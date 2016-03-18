@@ -1,4 +1,5 @@
-.floated_img
+.floated img
 {
-    float: left;
+    vertical-align: bottom;
 }
+
