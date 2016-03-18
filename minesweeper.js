@@ -96,9 +96,11 @@ function randomRange(min, max) {
  */
 function Board(size, bombs, cssSelector) {
   if (this instanceof Board) {
+    this.lock = false; // board is locked when player either wins or loses
     this.size = size;
     this.board = [];
     this.cssSelector = cssSelector;
+    this.blankTiles = size * size - bombs;
 
     // populate board with blanks
     for (var i = 0; i < size; i++) {
@@ -186,6 +188,9 @@ Board.prototype._adjacentBombs = function _adjacentBombs(x, y) {
  * @param {integer} y
  */
 Board.prototype.flagTile = function flagTile(x, y) {
+  // if the board is locked, do nothing
+  if (this.lock ===true) return;
+
   var tile = this.board[x][y];
   tile.flag = !tile.flag;
   this.render();
@@ -198,11 +203,15 @@ Board.prototype.flagTile = function flagTile(x, y) {
  * @param {Dictionary.<string, boolean>} previousTiles
  */
 Board.prototype._pressTileHelper = function _pressTileHelper(x, y) {
+  // if the board is locked, do nothing
+  if (this.lock === true) return;
+
   // check if tile is a bomb
   var tile = this.board[x][y];
   tile.pressed = true;
   if (tile.flag === true) {
-    tile.flag = false;
+    // flagged tiles should be locked
+    return;
   }
   if (tile.bomb === true) {
     tile.showBomb = true;
@@ -217,12 +226,16 @@ Board.prototype._pressTileHelper = function _pressTileHelper(x, y) {
         }
       }
     }
+    // prevent any more tiles from being pressed until page refresh
+    this.lock = true;
     return;
   }
   
   // otherwise calculate how many adjacent bombs
   var adjacentTiles = this._adjacentTiles(x, y);
   var adjacentBombs = this._adjacentBombs(x, y);
+  tile.number = adjacentBombs;
+  this.blankTiles--;
   if (adjacentBombs === 0) {
     // if no adjacent bombs, recursively call pressTile on all adjacent tiles
     for (var adjTileIndex = 0; adjTileIndex < adjacentTiles.length; adjTileIndex++) {
@@ -231,9 +244,8 @@ Board.prototype._pressTileHelper = function _pressTileHelper(x, y) {
         this._pressTileHelper(adjTile.x, adjTile.y);
       }
     }
-  } else {
-    tile.number = adjacentBombs;
   }
+
 };
 
 /**
@@ -245,6 +257,19 @@ Board.prototype._pressTileHelper = function _pressTileHelper(x, y) {
 Board.prototype.pressTile = function pressTile(x, y) {
   this._pressTileHelper(x, y);
   this.render();
+
+  // if no more empty tiles left, flag remaining tiles and declare winner
+  if (this.blankTiles === 0) {
+    for (var a = 0; a < this.size; a++) {
+      for (var b = 0; b < this.size; b++) {
+        var thistile = this.board[a][b];
+        if (thistile.bomb === true && thistile.flag === false) {
+          this.flagTile(a, b);
+        }
+      }
+    }
+    this.render();
+  }
 };
 
 /**
