@@ -40,3 +40,13 @@ called the tile pressing function on the adjacent tiles, which blew up JSBin bec
 tile was an adjacent tile and call it again which went on forever. I then tried to store the state of previously pressed tiles as 
 an "immutable" hashmap that is passed through the recursive function, which wasn't working until I realized I could just check if a tile was already pressed before recursively 
 calling it (facepalm 2).
+
+## Contributing
+
+I am now using the [standard style](https://github.com/feross/standard). You can run
+
+```
+standard ./minesweeper.js
+```
+
+to check for linting errors.
